@@ -1,0 +1,78 @@
+local player = game.Players.LocalPlayer
+local mouse = player:GetMouse()
+
+local ctrlHeld = false
+local shiftHeld = false
+
+local targetGuiName = "MyGameGui"
+
+local function onKeyDown(input)
+	if input.KeyCode == Enum.KeyCode.LeftControl then
+		print("ctrl pressed")
+		ctrlHeld = true
+	elseif input.KeyCode == Enum.KeyCode.LeftShift then
+		print("shift pressed")
+		shiftHeld = true
+	end
+end
+
+local function onKeyUp(input)
+	if input.KeyCode == Enum.KeyCode.LeftControl then
+		ctrlHeld = false
+	elseif input.KeyCode == Enum.KeyCode.LeftShift then
+		shiftHeld = false
+	end
+end
+
+local function isMouseOverGuiObject(guiObject)
+	local mouseX = mouse.X
+	local mouseY = mouse.Y
+	local guiPosition = guiObject.AbsolutePosition
+	local guiSize = guiObject.AbsoluteSize
+
+	return mouseX >= guiPosition.X and mouseX <= guiPosition.X + guiSize.X and
+		mouseY >= guiPosition.Y and mouseY <= guiPosition.Y + guiSize.Y
+end
+
+mouse.Button1Down:Connect(function()
+	if ctrlHeld then
+		for _,v in player.PlayerGui:GetChildren() do
+			if v:IsA("ScreenGui") then
+				local screenGui = v
+				if screenGui and screenGui.Enabled then
+					for _, guiObject in pairs(screenGui:GetDescendants()) do
+						if guiObject:IsA("TextLabel") and isMouseOverGuiObject(guiObject) or guiObject:IsA("TextButton") and isMouseOverGuiObject(guiObject) then
+							local parent = guiObject.Parent
+							local position = guiObject.Position
+							local size = guiObject.Size
+							local originalText = guiObject.Text
+							local textBox = Instance.new("TextBox")
+							textBox.Size = size
+							textBox.Position = position
+							textBox.Text = originalText
+							textBox.ClearTextOnFocus = false
+							textBox:CaptureFocus()
+							print(textBox.Text)
+							textBox.Parent = parent
+							textBox.TextScaled = guiObject.TextScaled
+							textBox.FocusLost:Connect(function(enterPressed)
+								if enterPressed then
+									guiObject.Text = textBox.Text
+								end
+								textBox:Destroy()
+								guiObject.Visible = true
+							end)
+
+							guiObject.Visible = false
+							break
+						end
+					end
+				end
+			end
+		end
+	end
+end)
+
+game:GetService("UserInputService").InputBegan:Connect(onKeyDown)
+game:GetService("UserInputService").InputEnded:Connect(onKeyUp)
+print("executed 5")
